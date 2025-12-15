@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import { generateVerificationMail, transporter } from '../config/mail.js'
 import TempUsers from '../models/TempUsers.model.js'
 import ApiResponse from '../utils/ApiResponse.js'
+import { generateToken } from '../utils/token.js'
 
 export const registration = [
     check('email')
@@ -22,7 +23,7 @@ export const registration = [
         .withMessage('password must contain a number'),
 
     AsyncHandler(async (req, res) => {
-        const {fullName, email, password, mobile, role} = req.body
+        const { fullName, email, password, mobile, role } = req.body
         if (!fullName || !email || !password || !mobile || !role) {
             throw new ApiErrors(400, 'all fields are required')
         }
@@ -36,7 +37,7 @@ export const registration = [
             throw new ApiErrors(400, 'entered wrong role')
         }
 
-        const dublicatedUser = await Users.findOne({email})
+        const dublicatedUser = await Users.findOne({ email })
         if (dublicatedUser) {
             throw new ApiErrors(400, 'this email is already registered')
         }
@@ -51,8 +52,8 @@ export const registration = [
         try {
             await TempUsers.findOneAndUpdate(
                 { email },
-                {fullName, password: hashPass, mobile, role, otp, expiredOtp },
-                {new: true, upsert: true}
+                { fullName, password: hashPass, mobile, role, otp, expiredOtp },
+                { new: true, upsert: true }
             )
             transporter.sendMail(mailOption)
 
@@ -66,3 +67,95 @@ export const registration = [
         }
     })
 ]
+
+export const verifyRegi = AsyncHandler(async (req, res) => {
+    const { email, otp } = req.body
+    if (!email) {
+        throw new ApiErrors(400, 'email are required')
+    }
+
+    const tempUser = await TempUsers.findOne({ email })
+    if (!tempUser) {
+        throw new ApiErrors(404, 'user is not found')
+    }
+
+    if (otp === '' || otp !== tempUser.otp) {
+        throw new ApiErrors(400, 'otp is not matched')
+    }
+
+    if (tempUser.expiredOtp.getTime() < Date.now()) {
+        throw new ApiErrors(400, 'otp is expired')
+    }
+
+    let user = await Users.create({
+        fullName: tempUser.fullName,
+        email: tempUser.email,
+        password: tempUser.password,
+        mobile: tempUser.mobile,
+        role: tempUser.role
+    })
+
+    user.password = undefined
+
+    await TempUsers.findByIdAndDelete(tempUser._id)
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, 'user verified successfully')
+        )
+})
+
+export const login = AsyncHandler(async (req, res) => {
+    const { email, password } = req.body
+    if (!email || !password) {
+        throw new ApiErrors(400, 'all field are required')
+    }
+
+    const user = await Users.findOne({ email })
+    if (!user) {
+        throw new ApiErrors(404, 'user not found')
+    }
+
+    const isPassMatched = await bcrypt.compare(password, user.password)
+    if (!isPassMatched) {
+        throw new ApiErrors(400, 'password does not matched')
+    }
+
+    user.password = undefined
+    const token = generateToken(user._id)
+    const tokenOption = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 10 * 24 * 60 * 60 * 1000,
+    }
+
+    return res
+        .status(200)
+        .cookie(
+            'token', token, tokenOption
+        )
+        .json(
+            new ApiResponse(200, user, 'user loggedIn successfully')
+        )
+})
+
+export const logout = AsyncHandler(async (req, res) => {
+    try {
+        const tokenOption = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+        }
+
+        return res
+            .status(200)
+            .clearCookie('token', tokenOption)
+            .json(
+                new ApiResponse(200, {}, 'logged out successfully')
+            )
+    } catch (error) {
+        throw new ApiErrors(500, 'user logged out failed')
+    }
+})
