@@ -1,4 +1,5 @@
 import cloudinary from "../config/cloudinary.js";
+import Items from "../models/Items.model.js";
 import Shops from "../models/shop.model.js";
 import ApiErrors from "../utils/ApiErrors.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -108,5 +109,24 @@ export const editShop = AsyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(200, shop, 'shop updated successfully')
+        )
+})
+
+export const fetchMyItems = AsyncHandler(async(req, res)=>{
+    const userId = req.user._id
+    const shop = await Shops.findOne({owner:userId})
+    if (!shop) {
+        throw new ApiErrors(404, 'shop not found')
+    }
+
+    const items = Items.find({shop: shop._id})
+    if (!items) {
+        throw new ApiErrors(404, 'item is not found')
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, items, 'items fetched successfully')
         )
 })

@@ -7,6 +7,7 @@ import isOwner from '../middlewares/isOwner.js'
 const shopRouter = express.Router()
 
 shopRouter.post('/add-shop', protect, isOwner, upload, shopController.createShop)
-shopRouter.patch('/edit-shop/:shopId', isOwner, protect, upload, shopController.editShop)
+shopRouter.patch('/edit-shop/:shopId', protect, isOwner, upload, shopController.editShop)
+shopRouter.get('/my-shop-items', protect, isOwner, shopController.fetchMyItems)
 
 export default shopRouter
