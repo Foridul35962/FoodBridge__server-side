@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser'
 // local imports
 import errorHandler from './utils/ErrorHandler.js'
 import authRouter from './routes/auth.routes.js'
+import shopRouter from './routes/shop.routes.js'
 
 
 const app = express()
@@ -23,6 +24,7 @@ app.use(express.json())
 
 //routes
 app.use('/api/auth', authRouter)
+app.use('/api/shop', shopRouter)
 
 app.get('/', (req, res) => {
     res.send('Food Bridge server is running...')
