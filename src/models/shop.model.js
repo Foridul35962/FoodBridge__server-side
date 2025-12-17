@@ -32,11 +32,7 @@ const shopSchema = new mongoose.Schema({
     address: {
         type: String,
         required: true
-    },
-    items: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Items'
-    }]
+    }
 }, { timestamps: true })
 
 const Shops = mongoose.model('Shop', shopSchema)

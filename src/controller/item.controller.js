@@ -41,9 +41,6 @@ export const addItem = AsyncHandler(async (req, res) => {
             foodTypes
         })
 
-        shop.items.push(item)
-        await shop.save({ validateBeforeSave: false })
-
         return res
             .status(200)
             .json(
