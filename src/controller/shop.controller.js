@@ -53,8 +53,10 @@ export const createShop = AsyncHandler(async (req, res) => {
 })
 
 export const editShop = AsyncHandler(async (req, res) => {
-    const { shopId, name, city, state, address } = req.body
+    const { name, city, state, address } = req.body
     const user = req.user
+
+    const {shopId} = req.params
 
     if (!shopId) {
         throw new ApiErrors(400, 'shop Id is required')
@@ -62,15 +64,11 @@ export const editShop = AsyncHandler(async (req, res) => {
 
     const dublicateShop = await Shops.findOne({
         name,
-        _id:{$ne:shopId}
+        _id: { $ne: shopId }
     })
 
     if (dublicateShop) {
         throw new ApiErrors(400, 'this shop name is already exest')
-    }
-
-    if (!user) {
-        throw new ApiErrors(401, 'unauthorize access')
     }
 
     const shop = await Shops.findById(shopId)
