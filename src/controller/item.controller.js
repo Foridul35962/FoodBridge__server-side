@@ -126,7 +126,7 @@ export const deleteItem = AsyncHandler(async (req, res) => {
         return res
             .status(200)
             .json(
-                new ApiResponse(200, {}, 'item deleted successfully')
+                new ApiResponse(200, itemId, 'item deleted successfully')
             )
     } catch (error) {
         throw new ApiErrors(500, 'item deleted failed')
