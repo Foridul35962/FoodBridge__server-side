@@ -57,7 +57,7 @@ export const editShop = AsyncHandler(async (req, res) => {
     const { name, city, state, address } = req.body
     const user = req.user
 
-    const {shopId} = req.params
+    const { shopId } = req.params
 
     if (!shopId) {
         throw new ApiErrors(400, 'shop Id is required')
@@ -112,14 +112,15 @@ export const editShop = AsyncHandler(async (req, res) => {
         )
 })
 
-export const fetchMyItems = AsyncHandler(async(req, res)=>{
+export const fetchMyItems = AsyncHandler(async (req, res) => {
     const userId = req.user._id
-    const shop = await Shops.findOne({owner:userId})
+
+    const shop = await Shops.findOne({ owner: userId })
     if (!shop) {
         throw new ApiErrors(404, 'shop not found')
     }
 
-    const items = Items.find({shop: shop._id})
+    const items = await Items.find({ shop: shop._id })
     if (!items) {
         throw new ApiErrors(404, 'item is not found')
     }
@@ -127,6 +128,6 @@ export const fetchMyItems = AsyncHandler(async(req, res)=>{
     return res
         .status(200)
         .json(
-            new ApiResponse(200, items, 'items fetched successfully')
+            new ApiResponse(200, { items, shop }, 'items fetched successfully')
         )
 })
