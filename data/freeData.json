@@ -5,7 +5,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/1.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Italian",
     "price": 300,
     "foodTypes": "veg"
@@ -16,7 +18,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/2.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Asian",
     "price": 250,
     "foodTypes": "veg"
@@ -27,7 +31,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/3.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "American",
     "price": 150,
     "foodTypes": "veg"
@@ -38,7 +44,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/4.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Italian",
     "price": 500,
     "foodTypes": "non veg"
@@ -49,7 +57,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/5.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Mexican",
     "price": 380,
     "foodTypes": "non veg"
@@ -60,7 +70,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/6.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Mediterranean",
     "price": 280,
     "foodTypes": "veg"
@@ -71,7 +83,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/7.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Italian",
     "price": 120,
     "foodTypes": "veg"
@@ -82,7 +96,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/8.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Asian",
     "price": 380,
     "foodTypes": "non veg"
@@ -93,7 +109,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/9.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Italian",
     "price": 200,
     "foodTypes": "veg"
@@ -104,7 +122,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/10.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Italian",
     "price": 400,
     "foodTypes": "non veg"
@@ -115,7 +135,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/11.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Pakistani",
     "price": 550,
     "foodTypes": "non veg"
@@ -126,7 +148,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/12.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Pakistani",
     "price": 420,
     "foodTypes": "non veg"
@@ -137,7 +161,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/13.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Pakistani",
     "price": 380,
     "foodTypes": "non veg"
@@ -148,7 +174,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/14.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Pakistani",
     "price": 320,
     "foodTypes": "non veg"
@@ -159,7 +187,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/15.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "6942a160be8a64bb0f3d53d9"
+    },
     "category": "Pakistani",
     "price": 280,
     "foodTypes": "veg"
@@ -170,7 +200,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/16.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Japanese",
     "price": 480,
     "foodTypes": "non veg"
@@ -181,7 +213,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/17.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Moroccan",
     "price": 320,
     "foodTypes": "veg"
@@ -192,7 +226,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/18.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Korean",
     "price": 550,
     "foodTypes": "non veg"
@@ -203,7 +239,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/19.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Greek",
     "price": 420,
     "foodTypes": "non veg"
@@ -214,7 +252,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/20.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Pakistani",
     "price": 480,
     "foodTypes": "non veg"
@@ -225,7 +265,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/21.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Thai",
     "price": 480,
     "foodTypes": "non veg"
@@ -236,7 +278,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/22.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Indian",
     "price": 180,
     "foodTypes": "veg"
@@ -247,7 +291,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/23.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Italian",
     "price": 350,
     "foodTypes": "veg"
@@ -258,7 +304,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/24.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Turkish",
     "price": 280,
     "foodTypes": "non veg"
@@ -269,7 +317,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/25.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Smoothie",
     "price": 220,
     "foodTypes": "veg"
@@ -280,7 +330,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/26.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Mexican",
     "price": 180,
     "foodTypes": "veg"
@@ -291,7 +343,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/27.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Russian",
     "price": 220,
     "foodTypes": "non veg"
@@ -302,7 +356,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/28.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Indian",
     "price": 320,
     "foodTypes": "veg"
@@ -313,7 +369,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/29.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Lebanese",
     "price": 400,
     "foodTypes": "veg"
@@ -324,7 +382,9 @@
       "url": "https://cdn.dummyjson.com/recipe-images/30.webp",
       "publicId": "null"
     },
-    "shop": null,
+    "shop": {
+      "$oid": "69440c519fc5c2e7451454ed"
+    },
     "category": "Brazilian",
     "price": 150,
     "foodTypes": "veg"
