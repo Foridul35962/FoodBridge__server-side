@@ -9,5 +9,6 @@ const shopRouter = express.Router()
 shopRouter.post('/add-shop', protect, isOwner, upload, shopController.createShop)
 shopRouter.patch('/edit-shop/:shopId', protect, isOwner, upload, shopController.editShop)
 shopRouter.get('/my-shop-items', protect, isOwner, shopController.fetchMyItems)
+shopRouter.post('/get-shop-by-city', shopController.getShopsByCity)
 
 export default shopRouter

@@ -131,3 +131,24 @@ export const fetchMyItems = AsyncHandler(async (req, res) => {
             new ApiResponse(200, { items, shop }, 'items fetched successfully')
         )
 })
+
+export const getShopsByCity = AsyncHandler(async (req, res) => {
+    const { city } = req.body
+    if (!city) {
+        throw new ApiErrors(404, 'city is missing')
+    }
+
+    const shops = await Shops.find({ city })
+    if (!shops) {
+        throw new ApiErrors(404, 'shop is not found')
+    }
+
+    const shopIds = shops.map(shop => shop._id)
+    const items = await Items.find({ shop: { $in: shopIds } })
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {shops, items}, 'shops and items fetched successfully')
+        )
+})
