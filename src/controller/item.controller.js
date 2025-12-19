@@ -8,7 +8,7 @@ import uploadToCloudinary from "../utils/uploadToCloudinary.js";
 
 export const addItem = AsyncHandler(async (req, res) => {
     const { name, category, price, foodTypes } = req.body
-    
+
     if (!name || !category || !price || !foodTypes) {
         throw new ApiErrors(400, 'all field are required')
     }
@@ -54,7 +54,7 @@ export const addItem = AsyncHandler(async (req, res) => {
 
 export const editItem = AsyncHandler(async (req, res) => {
     const { name, category, price, foodTypes } = req.body
-    const {itemId} = req.params
+    const { itemId } = req.params
     if (!itemId) {
         throw new ApiErrors(400, 'item id is required')
     }
@@ -80,7 +80,9 @@ export const editItem = AsyncHandler(async (req, res) => {
                 url: uploaded.secure_url,
                 publicId: uploaded.public_id
             }
-            await cloudinary.uploader.destroy(item.image.publicId)
+            if (item.image.publicId !== null) {
+                await cloudinary.uploader.destroy(item.image.publicId)
+            }
         } catch (error) {
             throw new ApiErrors(500, 'image upload failed')
         }
@@ -107,20 +109,22 @@ export const deleteItem = AsyncHandler(async (req, res) => {
     if (!itemId) {
         throw new ApiErrors(400, 'itemId is required')
     }
-    
+
     const userId = req.user?._id
     // item + shop + owner verify in ONE step
     const item = await Items.findOne({ _id: itemId }).populate({
         path: 'shop',
         match: { owner: userId }
     })
-    
+
     if (!item || !item.shop) {
         throw new ApiErrors(401, 'unauthorized or item not found')
     }
 
     try {
-        await cloudinary.uploader.destroy(item.image.publicId)
+        if (item.image.publicId !== null) {
+            await cloudinary.uploader.destroy(item.image.publicId)
+        }
         await item.deleteOne()
 
         return res
@@ -131,4 +135,17 @@ export const deleteItem = AsyncHandler(async (req, res) => {
     } catch (error) {
         throw new ApiErrors(500, 'item deleted failed')
     }
+})
+
+export const allItem = AsyncHandler(async (req, res) => {
+    const item = await Items.find()
+    if (!item) {
+        throw new ApiErrors(404, 'item not found')
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, item, 'item fetched successfully')
+        )
 })
