@@ -1,0 +1,332 @@
+[
+  {
+    "name": "Classic Margherita Pizza",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/1.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Italian",
+    "price": 300,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Vegetarian Stir-Fry",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/2.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Asian",
+    "price": 250,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Chocolate Chip Cookies",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/3.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "American",
+    "price": 150,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Chicken Alfredo Pasta",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/4.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Italian",
+    "price": 500,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Mango Salsa Chicken",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/5.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Mexican",
+    "price": 380,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Quinoa Salad with Avocado",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/6.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Mediterranean",
+    "price": 280,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Tomato Basil Bruschetta",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/7.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Italian",
+    "price": 120,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Beef and Broccoli Stir-Fry",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/8.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Asian",
+    "price": 380,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Caprese Salad",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/9.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Italian",
+    "price": 200,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Shrimp Scampi Pasta",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/10.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Italian",
+    "price": 400,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Chicken Biryani",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/11.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Pakistani",
+    "price": 550,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Chicken Karahi",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/12.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Pakistani",
+    "price": 420,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Aloo Keema",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/13.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Pakistani",
+    "price": 380,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Chapli Kebabs",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/14.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Pakistani",
+    "price": 320,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Saag (Spinach) with Makki di Roti",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/15.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Pakistani",
+    "price": 280,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Japanese Ramen Soup",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/16.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Japanese",
+    "price": 480,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Moroccan Chickpea Tagine",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/17.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Moroccan",
+    "price": 320,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Korean Bibimbap",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/18.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Korean",
+    "price": 550,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Greek Moussaka",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/19.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Greek",
+    "price": 420,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Butter Chicken (Murgh Makhani)",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/20.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Pakistani",
+    "price": 480,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Thai Green Curry",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/21.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Thai",
+    "price": 480,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Mango Lassi",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/22.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Indian",
+    "price": 180,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Italian Tiramisu",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/23.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Italian",
+    "price": 350,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Turkish Kebabs",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/24.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Turkish",
+    "price": 280,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "Blueberry Banana Smoothie",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/25.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Smoothie",
+    "price": 220,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Mexican Street Corn (Elote)",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/26.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Mexican",
+    "price": 180,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Russian Borscht",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/27.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Russian",
+    "price": 220,
+    "foodTypes": "non veg"
+  },
+  {
+    "name": "South Indian Masala Dosa",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/28.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Indian",
+    "price": 320,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Lebanese Falafel Wrap",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/29.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Lebanese",
+    "price": 400,
+    "foodTypes": "veg"
+  },
+  {
+    "name": "Brazilian Caipirinha",
+    "image": {
+      "url": "https://cdn.dummyjson.com/recipe-images/30.webp",
+      "publicId": "null"
+    },
+    "shop": null,
+    "category": "Brazilian",
+    "price": 150,
+    "foodTypes": "veg"
+  }
+]
