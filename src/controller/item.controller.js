@@ -149,3 +149,21 @@ export const allItem = AsyncHandler(async (req, res) => {
             new ApiResponse(200, item, 'item fetched successfully')
         )
 })
+
+export const getItemById = AsyncHandler(async(req, res)=>{
+    const {itemId} = req.params
+    if (!itemId) {
+        throw new ApiErrors(400, 'itemId is required')
+    }
+
+    const item = await Items.findById(itemId)
+    if (!item) {
+        throw new ApiErrors(404, 'item is not found')
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, item, 'item fetched successfully')
+        )
+})
