@@ -149,6 +149,26 @@ export const getShopsByCity = AsyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(
-            new ApiResponse(200, {shops, items}, 'shops and items fetched successfully')
+            new ApiResponse(200, { shops, items }, 'shops and items fetched successfully')
+        )
+})
+
+export const getShopItem = AsyncHandler(async (req, res) => {
+    const { shopId } = req.params
+    if (!shopId) {
+        throw new ApiErrors(400, 'shop id is missing')
+    }
+
+    const shop = await Shops.findById(shopId).select("-owner")
+    if (!shop) {
+        throw new ApiErrors(404, 'shop is not found')
+    }
+
+    const shopItems = await Items.find({ shop: shop._id })
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, { shop, shopItems }, 'shop details fetched successfully')
         )
 })
