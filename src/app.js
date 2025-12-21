@@ -8,6 +8,7 @@ import errorHandler from './utils/ErrorHandler.js'
 import authRouter from './routes/auth.routes.js'
 import shopRouter from './routes/shop.routes.js'
 import itemRouter from './routes/item.routes.js'
+import orderRouter from './routes/order.routes.js'
 
 
 const app = express()
@@ -27,6 +28,7 @@ app.use(express.json())
 app.use('/api/auth', authRouter)
 app.use('/api/shop', shopRouter)
 app.use('/api/item', itemRouter)
+app.use('/api/order', orderRouter)
 
 app.get('/', (req, res) => {
     res.send('Food Bridge server is running...')
