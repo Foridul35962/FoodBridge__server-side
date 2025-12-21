@@ -5,5 +5,6 @@ import protect from '../middlewares/protected.js'
 const orderRouter = express.Router()
 
 orderRouter.post('/place-order', protect, orderController.placeOrder)
+orderRouter.get('/my-orders', protect, orderController.getMyOrders)
 
 export default orderRouter
