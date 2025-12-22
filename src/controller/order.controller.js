@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Orders from "../models/Order.model.js";
 import Shops from "../models/shop.model.js";
 import ApiErrors from "../utils/ApiErrors.js";
@@ -169,5 +170,101 @@ export const getMyOrders = AsyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(200, orders, 'Orders fetched successfully')
+        );
+});
+
+export const changeOrderStatus = AsyncHandler(async (req, res) => {
+    const { orderId, shopId, status } = req.body;
+
+    if (!orderId || !shopId || !status) {
+        throw new ApiErrors(400, 'Order ID, Shop ID, and Status are required');
+    }
+
+    const updatedResult = await Orders.updateOne(
+        { _id: orderId, "shopOrders.shop": shopId },
+        { $set: { "shopOrders.$[elem].status": status } },
+        { arrayFilters: [{ "elem.shop": shopId }] }
+    );
+
+    if (updatedResult.matchedCount === 0) {
+        throw new ApiErrors(404, 'Order or Shop not found');
+    }
+
+    const updatedOrderData = await Orders.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(orderId) } },
+        { $unwind: "$shopOrders" },
+        { $match: { "shopOrders.shop": new mongoose.Types.ObjectId(shopId) } },
+
+        {
+            $lookup: {
+                from: "shops",
+                localField: "shopOrders.shop",
+                foreignField: "_id",
+                as: "shopOrders.shop"
+            }
+        },
+        { $unwind: "$shopOrders.shop" },
+        {
+            $lookup: {
+                from: "items",
+                localField: "shopOrders.shopOrderItems.item",
+                foreignField: "_id",
+                as: "all_item_details"
+            }
+        },
+        {
+            $addFields: {
+                "shopOrders.shopOrderItems": {
+                    $map: {
+                        input: "$shopOrders.shopOrderItems",
+                        as: "subItem",
+                        in: {
+                            $mergeObjects: [
+                                "$$subItem",
+                                {
+                                    item: {
+                                        $arrayElemAt: [
+                                            {
+                                                $filter: {
+                                                    input: "$all_item_details",
+                                                    as: "detail",
+                                                    cond: { $eq: ["$$detail._id", "$$subItem.item"] }
+                                                }
+                                            },
+                                            0
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "user",
+                foreignField: "_id",
+                as: "user"
+            }
+        },
+        { $unwind: "$user" },
+        {
+            $project: {
+                "user.password": 0,
+                "all_item_details": 0,
+                "__v": 0
+            }
+        }
+    ]);
+
+    if (!updatedOrderData || updatedOrderData.length === 0) {
+        throw new ApiErrors(404, 'Failed to fetch updated order details');
+    }
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedOrderData[0], "Order status updated successfully")
         );
 });
