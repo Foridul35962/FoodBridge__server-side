@@ -22,8 +22,23 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         enum: ['user', 'owner', 'deliveryBoy']
+    },
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            required: true,
+            default: 'Point'
+        },
+        coordinates: {
+            type: [Number],
+            required: true,
+            default: [0, 0]
+        }
     }
 }, { timestamps: true })
+
+userSchema.index({ location: "2dsphere" })
 
 const Users = mongoose.model('Users', userSchema)
 

@@ -273,7 +273,7 @@ export const resetPass = [
     })
 ]
 
-export const getUsers = AsyncHandler(async(req, res)=>{
+export const getUsers = AsyncHandler(async (req, res) => {
     const user = req?.user
     if (!user) {
         throw new ApiErrors(404, 'user not found')
@@ -284,3 +284,42 @@ export const getUsers = AsyncHandler(async(req, res)=>{
             new ApiResponse(200, user, 'user data fetched successfully')
         )
 })
+
+export const updateUserLocation = AsyncHandler(async (req, res) => {
+    const { lat, lon } = req.body;
+
+    if (lat === undefined || lon === undefined || lat === null || lon === null) {
+        throw new ApiErrors(400, 'Latitude and Longitude are required');
+    }
+
+    const longitude = parseFloat(lon);
+    const latitude = parseFloat(lat);
+
+    if (isNaN(longitude) || isNaN(latitude)) {
+        throw new ApiErrors(400, 'Invalid coordinates format');
+    }
+
+    const locationData = {
+        type: 'Point',
+        coordinates: [longitude, latitude]
+    };
+
+    const user = await Users.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: { location: locationData }
+        },
+        {
+            new: true,
+            runValidators: true
+        }
+    ).select("-password");
+
+    if (!user) {
+        throw new ApiErrors(404, 'User not found');
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, user, 'User location updated successfully')
+    );
+});
