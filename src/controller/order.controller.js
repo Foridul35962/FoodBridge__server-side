@@ -4,6 +4,8 @@ import Shops from "../models/shop.model.js";
 import ApiErrors from "../utils/ApiErrors.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import AsyncHandler from "../utils/AsyncHandler.js";
+import Users from "../models/Users.model.js";
+import DeliveryAssainments from "../models/DeliveryAssainment.model.js";
 
 export const placeOrder = AsyncHandler(async (req, res) => {
     const { cartItems, paymentMethod, deliveryAddress, totalAmount } = req.body
@@ -173,98 +175,156 @@ export const getMyOrders = AsyncHandler(async (req, res) => {
         );
 });
 
+
 export const changeOrderStatus = AsyncHandler(async (req, res) => {
     const { orderId, shopId, status } = req.body;
 
     if (!orderId || !shopId || !status) {
-        throw new ApiErrors(400, 'Order ID, Shop ID, and Status are required');
+        throw new ApiErrors(400, "Order ID, Shop ID and Status are required");
     }
 
-    const updatedResult = await Orders.updateOne(
+    const updateResult = await Orders.updateOne(
         { _id: orderId, "shopOrders.shop": shopId },
         { $set: { "shopOrders.$[elem].status": status } },
         { arrayFilters: [{ "elem.shop": shopId }] }
     );
 
-    if (updatedResult.matchedCount === 0) {
-        throw new ApiErrors(404, 'Order or Shop not found');
+    if (updateResult.matchedCount === 0) {
+        throw new ApiErrors(404, "Order or Shop not found");
     }
 
-    const updatedOrderData = await Orders.aggregate([
-        { $match: { _id: new mongoose.Types.ObjectId(orderId) } },
-        { $unwind: "$shopOrders" },
-        { $match: { "shopOrders.shop": new mongoose.Types.ObjectId(shopId) } },
+    const order = await Orders.findById(orderId)
+        .populate("user", "-password")
+        .populate("shopOrders.shop")
+        .populate("shopOrders.shopOrderItems.item")
+        .populate("shopOrders.assignedDeliveryBoy", "fullName email mobile");
 
-        {
-            $lookup: {
-                from: "shops",
-                localField: "shopOrders.shop",
-                foreignField: "_id",
-                as: "shopOrders.shop"
-            }
-        },
-        { $unwind: "$shopOrders.shop" },
-        {
-            $lookup: {
-                from: "items",
-                localField: "shopOrders.shopOrderItems.item",
-                foreignField: "_id",
-                as: "all_item_details"
-            }
-        },
-        {
-            $addFields: {
-                "shopOrders.shopOrderItems": {
-                    $map: {
-                        input: "$shopOrders.shopOrderItems",
-                        as: "subItem",
-                        in: {
-                            $mergeObjects: [
-                                "$$subItem",
-                                {
-                                    item: {
-                                        $arrayElemAt: [
-                                            {
-                                                $filter: {
-                                                    input: "$all_item_details",
-                                                    as: "detail",
-                                                    cond: { $eq: ["$$detail._id", "$$subItem.item"] }
-                                                }
-                                            },
-                                            0
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    }
+    if (!order) {
+        throw new ApiErrors(404, "Order not found");
+    }
+
+    const shopOrder = order.shopOrders.find(
+        so => so.shop && so.shop._id.toString() === shopId
+    );
+
+    if (!shopOrder) {
+        throw new ApiErrors(404, "Shop order not found");
+    }
+
+    let deliveryBoyPayload = null;
+
+    if (status === "Out of delivery" && !shopOrder.assignment) {
+        const { latitude, longitude } = order.deliveryAddress;
+
+        const nearbyDeliveryBoys = await Users.find({
+            role: "deliveryBoy",
+            location: {
+                $near: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [
+                            Number(longitude),
+                            Number(latitude)
+                        ]
+                    },
+                    $maxDistance: 5000
                 }
             }
-        },
-        {
-            $lookup: {
-                from: "users",
-                localField: "user",
-                foreignField: "_id",
-                as: "user"
-            }
-        },
-        { $unwind: "$user" },
-        {
-            $project: {
-                "user.password": 0,
-                "all_item_details": 0,
-                "__v": 0
-            }
-        }
-    ]);
+        });
 
-    if (!updatedOrderData || updatedOrderData.length === 0) {
-        throw new ApiErrors(404, 'Failed to fetch updated order details');
+        if (nearbyDeliveryBoys.length === 0) {
+            throw new ApiErrors(404, "No delivery boy nearby");
+        }
+
+        const nearbyIds = nearbyDeliveryBoys.map(b => b._id);
+
+        const busyIds = await DeliveryAssainments.find({
+            assignedTo: { $in: nearbyIds },
+            status: { $nin: ["completed"] }
+        }).distinct("assignedTo");
+
+        const busySet = new Set(busyIds.map(id => id.toString()));
+
+        const availableBoys = nearbyDeliveryBoys.filter(
+            b => !busySet.has(b._id.toString())
+        );
+
+        if (availableBoys.length === 0) {
+            throw new ApiErrors(404, "Delivery boy not available");
+        }
+
+        const assignment = await DeliveryAssainments.create({
+            order: order._id,
+            shop: shopOrder.shop._id,
+            shopOrderId: shopOrder._id,
+            brodcastedTo: availableBoys.map(b => b._id),
+            status: "brodcasted"
+        });
+
+        shopOrder.assignment = assignment._id;
+        shopOrder.assignedDeliveryBoy = null;
+
+        await order.save();
+
+        deliveryBoyPayload = availableBoys.map(b => ({
+            _id: b._id,
+            fullName: b.fullName,
+            longitude: b.location.coordinates[0],
+            latitude: b.location.coordinates[1],
+            mobile: b.mobile
+        }));
     }
+
+    const responsePayload = {
+        _id: order._id,
+        user: order.user,
+        paymentMethod: order.paymentMethod,
+        deliveryAddress: order.deliveryAddress,
+        totalAmount: order.totalAmount,
+        shopOrders: shopOrder,
+        deliveryCandidates: deliveryBoyPayload
+    };
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            responsePayload,
+            "Order status updated successfully"
+        )
+    );
+});
+
+
+export const getDeliveryAssignment = AsyncHandler(async (req, res) => {
+    const deliveryBoyId = req.user._id
+    const assignments = await DeliveryAssainments.find({
+        brodcastedTo: deliveryBoyId,
+        status: "brodcasted"
+    })
+        .populate({
+            path: "order",
+            populate: {
+                path: "shopOrders.shopOrderItems.item"
+            }
+        })
+        .populate("shop")
+
+    if (assignments.length === 0) {
+        throw new ApiErrors(404, 'no order found')
+    }
+
+    const formeted = assignments.map(a => ({
+        assignmentId: a._id,
+        orderId: a.order._id,
+        shopName: a.shop.name,
+        deliveryAddress: a.order.deliveryAddress,
+        items: a.order.shopOrders.find(so => so._id.toString() === a.shopOrderId.toString())?.shopOrderItems || [],
+        subTotal: a.order.shopOrders.find(so => so._id.toString() === a.shopOrderId.toString())?.subTotal
+    }))
+
     return res
         .status(200)
         .json(
-            new ApiResponse(200, updatedOrderData[0], "Order status updated successfully")
-        );
-});
+            new ApiResponse(200, formeted, 'delivery info fetched successfully')
+        )
+})
