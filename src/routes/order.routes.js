@@ -8,5 +8,6 @@ orderRouter.post('/place-order', protect, orderController.placeOrder)
 orderRouter.get('/my-orders', protect, orderController.getMyOrders)
 orderRouter.post('/change-status', protect, orderController.changeOrderStatus)
 orderRouter.get('/get-assignments', protect, orderController.getDeliveryAssignment)
+orderRouter.get('/accept-order/:assignmentId', protect, orderController.acceptOrder)
 
 export default orderRouter

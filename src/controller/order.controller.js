@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import Orders from "../models/Order.model.js";
 import Shops from "../models/shop.model.js";
 import ApiErrors from "../utils/ApiErrors.js";
@@ -58,121 +57,172 @@ export const placeOrder = AsyncHandler(async (req, res) => {
 })
 
 export const getMyOrders = AsyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    const user = req.user
+    try {
+        const userId = req.user._id;
+        const user = req.user
 
-    let orders
-    if (user.role === 'user') {
-        orders = await Orders.find({ user: userId })
-            .sort({ createdAt: -1 })
-            .populate({
-                path: "shopOrders",
-                populate: [
-                    { path: "shop", select: "name" },
-                    { path: "owner", select: "name email mobile" },
-                    {
-                        path: "shopOrderItems.item",
-                        select: "name image price"
+        let orders
+        if (user.role === 'user') {
+            orders = await Orders.find({ user: userId })
+                .sort({ createdAt: -1 })
+                .populate({
+                    path: "shopOrders",
+                    populate: [
+                        { path: "shop", select: "name" },
+                        { path: "owner", select: "name email mobile" },
+                        {
+                            path: "shopOrderItems.item",
+                            select: "name image price"
+                        }
+                    ]
+                })
+                .lean()
+                .exec()
+        } else if (user.role === 'owner') {
+            orders = await Orders.aggregate([
+                // Only orders where this owner exists
+                { $match: { "shopOrders.owner": userId } },
+
+                // Break shopOrders array
+                { $unwind: "$shopOrders" },
+
+                // Again match owner (important after unwind)
+                { $match: { "shopOrders.owner": userId } },
+
+                {
+                    $lookup: {
+                        from: "items",
+                        localField: "shopOrders.shopOrderItems.item",
+                        foreignField: "_id",
+                        as: "all_item_details"
                     }
-                ]
-            })
-            .lean()
-            .exec()
-    } else if (user.role === 'owner') {
-        orders = await Orders.aggregate([
-            // 1. Filter orders that have this owner's shop
-            { $match: { "shopOrders.owner": userId } },
-
-            // 2. Break the shopOrders array into individual documents
-            { $unwind: "$shopOrders" },
-
-            // 3. Keep ONLY the shopOrder that belongs to this specific owner
-            { $match: { "shopOrders.owner": userId } },
-
-            // 4. Populate Shop details
-            {
-                $lookup: {
-                    from: "shops", // collection name for shops
-                    localField: "shopOrders.shop",
-                    foreignField: "_id",
-                    as: "shopOrders.shop"
-                }
-            },
-            { $unwind: "$shopOrders.shop" },
-
-            // 5. Populate ALL items in the shopOrderItems array at once
-            {
-                $lookup: {
-                    from: "items", // Use your actual collection name (likely "items")
-                    localField: "shopOrders.shopOrderItems.item",
-                    foreignField: "_id",
-                    as: "all_item_details"
-                }
-            },
-
-            // 6. Merge the full item details into the shopOrderItems array
-            {
-                $addFields: {
-                    "shopOrders.shopOrderItems": {
-                        $map: {
-                            input: "$shopOrders.shopOrderItems",
-                            as: "subItem",
-                            in: {
-                                $mergeObjects: [
-                                    "$$subItem",
-                                    {
-                                        item: {
-                                            $arrayElemAt: [
-                                                {
-                                                    $filter: {
-                                                        input: "$all_item_details",
-                                                        as: "detail",
-                                                        cond: { $eq: ["$$detail._id", "$$subItem.item"] }
-                                                    }
-                                                },
-                                                0
-                                            ]
+                },
+                {
+                    $addFields: {
+                        "shopOrders.shopOrderItems": {
+                            $map: {
+                                input: "$shopOrders.shopOrderItems",
+                                as: "subItem",
+                                in: {
+                                    $mergeObjects: [
+                                        "$$subItem",
+                                        {
+                                            item: {
+                                                $arrayElemAt: [
+                                                    {
+                                                        $filter: {
+                                                            input: "$all_item_details",
+                                                            as: "detail",
+                                                            cond: {
+                                                                $eq: ["$$detail._id", "$$subItem.item"]
+                                                            }
+                                                        }
+                                                    },
+                                                    0
+                                                ]
+                                            }
                                         }
-                                    }
-                                ]
+                                    ]
+                                }
                             }
                         }
                     }
-                }
-            },
+                },
 
-            // 7. Populate User details
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "user",
-                    foreignField: "_id",
-                    as: "user"
-                }
-            },
-            { $unwind: "$user" },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "shopOrders.assignedDeliveryBoy",
+                        foreignField: "_id",
+                        as: "assignedDeliveryBoyObj"
+                    }
+                },
+                {
+                    $addFields: {
+                        "shopOrders.assignedDeliveryBoy": {
+                            $arrayElemAt: ["$assignedDeliveryBoyObj", 0]
+                        }
+                    }
+                },
 
-            // 8. Final Sort and Cleanup
-            { $sort: { createdAt: -1 } },
-            {
-                $project: {
-                    "user.password": 0,
-                    "all_item_details": 0,
-                    "__v": 0
+                {
+                    $lookup: {
+                        from: "deliveryassainments",
+                        localField: "shopOrders.assignment",
+                        foreignField: "_id",
+                        as: "assignmentObj"
+                    }
+                },
+                {
+                    $addFields: {
+                        "shopOrders.assignment": {
+                            $arrayElemAt: ["$assignmentObj", 0]
+                        }
+                    }
+                },
+
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "shopOrders.assignment.brodcastedTo",
+                        foreignField: "_id",
+                        as: "brodcastedToUsers"
+                    }
+                },
+                {
+                    $addFields: {
+                        "shopOrders.assignment.brodcastedTo": {
+                            $map: {
+                                input: "$brodcastedToUsers",
+                                as: "user",
+                                in: {
+                                    _id: "$$user._id",
+                                    fullName: "$$user.fullName",
+                                    email: "$$user.email",
+                                    mobile: "$$user.mobile"
+                                }
+                            }
+                        }
+                    }
+                },
+
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "user",
+                        foreignField: "_id",
+                        as: "user"
+                    }
+                },
+                { $unwind: "$user" },
+                { $sort: { createdAt: -1 } },
+                {
+                    $project: {
+                        "user.password": 0,
+                        "assignedDeliveryBoyObj": 0,
+                        "assignmentObj": 0,
+                        "brodcastedToUsers": 0,
+                        "shopOrders.assignedDeliveryBoy.password": 0,
+                        "all_item_details": 0,
+                        "__v": 0
+                    }
                 }
-            }
-        ]);
+            ]);
+
+        }
+
+        if (!orders || orders.length === 0) {
+            throw new ApiErrors(404, 'No orders found for this user');
+        }
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, orders, 'Orders fetched successfully')
+            );
+    } catch (error) {
+        console.log(error)
     }
-
-    if (!orders || orders.length === 0) {
-        throw new ApiErrors(404, 'No orders found for this user');
-    }
-
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, orders, 'Orders fetched successfully')
-        );
 });
 
 
@@ -183,36 +233,36 @@ export const changeOrderStatus = AsyncHandler(async (req, res) => {
         throw new ApiErrors(400, "Order ID, Shop ID and Status are required");
     }
 
-    const updateResult = await Orders.updateOne(
-        { _id: orderId, "shopOrders.shop": shopId },
-        { $set: { "shopOrders.$[elem].status": status } },
-        { arrayFilters: [{ "elem.shop": shopId }] }
-    );
-
-    if (updateResult.matchedCount === 0) {
-        throw new ApiErrors(404, "Order or Shop not found");
+    // normalize shopId (frontend theke object ashle)
+    let normalizedShopId = shopId;
+    if (typeof shopId === "object" && shopId._id) {
+        normalizedShopId = shopId._id;
     }
 
-    const order = await Orders.findById(orderId)
-        .populate("user", "-password")
-        .populate("shopOrders.shop")
-        .populate("shopOrders.shopOrderItems.item")
-        .populate("shopOrders.assignedDeliveryBoy", "fullName email mobile");
-
+    // Get raw order (NO populate)
+    const order = await Orders.findById(orderId);
     if (!order) {
         throw new ApiErrors(404, "Order not found");
     }
 
+    // Find correct shopOrder
     const shopOrder = order.shopOrders.find(
-        so => so.shop && so.shop._id.toString() === shopId
+        so => so.shop.toString() === normalizedShopId.toString()
     );
 
     if (!shopOrder) {
+        console.log("ShopOrders:", order.shopOrders);
+        console.log("Requested shopId:", normalizedShopId);
         throw new ApiErrors(404, "Shop order not found");
     }
 
+    // Update status
+    shopOrder.status = status;
+    await order.save();
+
     let deliveryBoyPayload = null;
 
+    //  Handle "Out of delivery"
     if (status === "Out of delivery" && !shopOrder.assignment) {
         const { latitude, longitude } = order.deliveryAddress;
 
@@ -253,9 +303,10 @@ export const changeOrderStatus = AsyncHandler(async (req, res) => {
             throw new ApiErrors(404, "Delivery boy not available");
         }
 
+        // Create assignment
         const assignment = await DeliveryAssainments.create({
             order: order._id,
-            shop: shopOrder.shop._id,
+            shop: shopOrder.shop,
             shopOrderId: shopOrder._id,
             brodcastedTo: availableBoys.map(b => b._id),
             status: "brodcasted"
@@ -263,36 +314,53 @@ export const changeOrderStatus = AsyncHandler(async (req, res) => {
 
         shopOrder.assignment = assignment._id;
         shopOrder.assignedDeliveryBoy = null;
-
         await order.save();
 
         deliveryBoyPayload = availableBoys.map(b => ({
             _id: b._id,
             fullName: b.fullName,
-            longitude: b.location.coordinates[0],
             latitude: b.location.coordinates[1],
+            longitude: b.location.coordinates[0],
             mobile: b.mobile
         }));
     }
 
-    const responsePayload = {
-        _id: order._id,
-        user: order.user,
-        paymentMethod: order.paymentMethod,
-        deliveryAddress: order.deliveryAddress,
-        totalAmount: order.totalAmount,
-        shopOrders: shopOrder,
-        deliveryCandidates: deliveryBoyPayload
-    };
+    // Populate final response
+    const populatedOrder = await Orders.findById(orderId)
+        .populate("user", "-password")
+        .populate("shopOrders.shop")
+        .populate("shopOrders.shopOrderItems.item")
+        .populate("shopOrders.assignedDeliveryBoy", "fullName email mobile")
+        .populate({
+            path: "shopOrders.assignment",
+            populate: {
+                path: "brodcastedTo",
+                select: "fullName email mobile"
+            }
+        })
+
+    const populatedShopOrder = populatedOrder.shopOrders.find(
+        so => so._id.toString() === shopOrder._id.toString()
+    );
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            responsePayload,
+            {
+                _id: populatedOrder._id,
+                user: populatedOrder.user,
+                paymentMethod: populatedOrder.paymentMethod,
+                deliveryAddress: populatedOrder.deliveryAddress,
+                totalAmount: populatedOrder.totalAmount,
+                shopOrders: populatedShopOrder,
+                createdAt: populatedOrder.createdAt,
+                deliveryCandidates: deliveryBoyPayload
+            },
             "Order status updated successfully"
         )
     );
 });
+
 
 
 export const getDeliveryAssignment = AsyncHandler(async (req, res) => {
@@ -326,5 +394,45 @@ export const getDeliveryAssignment = AsyncHandler(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(200, formeted, 'delivery info fetched successfully')
+        )
+})
+
+export const acceptOrder = AsyncHandler(async (req, res) => {
+    const { assignmentId } = req.params
+    const assignment = await DeliveryAssainments.findById(assignmentId)
+    if (!assignment) {
+        throw new ApiErrors(400, 'assignment not found')
+    }
+    if (assignment.status !== 'brodcasted') {
+        throw new ApiErrors(400, 'assignment is expired')
+    }
+
+    const alreadyAssigned = await DeliveryAssainments.findOne({
+        assignedTo: req.user._id,
+        status: { $nin: ["brodcasted", 'completed'] }
+    })
+
+    if (alreadyAssigned) {
+        throw new ApiErrors(400, 'delevery man is already assigned to another order')
+    }
+
+    assignment.assignedTo = req.user._id
+    assignment.status = 'assigned'
+    assignment.acceptedAt = Date.now()
+    await assignment.save()
+
+    const order = await Orders.findById(assignment.order)
+    if (!order) {
+        throw new ApiErrors(400, 'order not found')
+    }
+
+    const shopOrder = order.shopOrders.find(so => so._id.toString() === assignment.shopOrderId.toString())
+    shopOrder.assignedDeliveryBoy = req.user._id
+    await order.save()
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, 'order accepted')
         )
 })
