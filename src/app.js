@@ -9,6 +9,7 @@ import authRouter from './routes/auth.routes.js'
 import shopRouter from './routes/shop.routes.js'
 import itemRouter from './routes/item.routes.js'
 import orderRouter from './routes/order.routes.js'
+import deliveryRouter from './routes/delivery.routes.js'
 
 
 const app = express()
@@ -29,6 +30,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/shop', shopRouter)
 app.use('/api/item', itemRouter)
 app.use('/api/order', orderRouter)
+app.use('/api/delivery', deliveryRouter)
 
 app.get('/', (req, res) => {
     res.send('Food Bridge server is running...')
