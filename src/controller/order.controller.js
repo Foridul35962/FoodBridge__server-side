@@ -12,6 +12,10 @@ export const placeOrder = AsyncHandler(async (req, res) => {
         throw new ApiErrors(400, 'all field are required')
     }
 
+    if (deliveryAddress.text === '' || !deliveryAddress.latitude || !deliveryAddress.longitude) {
+        throw new ApiErrors(400, 'address is required')
+    }
+
     const groupItemShop = []
     cartItems.forEach(item => {
         const shopId = item.shop
