@@ -9,5 +9,6 @@ orderRouter.get('/my-orders', protect, orderController.getMyOrders)
 orderRouter.post('/change-status', protect, orderController.changeOrderStatus)
 orderRouter.get('/get-assignments', protect, orderController.getDeliveryAssignment)
 orderRouter.get('/accept-order/:assignmentId', protect, orderController.acceptOrder)
+orderRouter.get('/get-order/:orderId', protect, orderController.getOrderById)
 
 export default orderRouter

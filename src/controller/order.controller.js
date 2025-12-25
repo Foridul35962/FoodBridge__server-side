@@ -440,3 +440,39 @@ export const acceptOrder = AsyncHandler(async (req, res) => {
             new ApiResponse(200, {}, 'order accepted')
         )
 })
+
+export const getOrderById = AsyncHandler(async (req, res) => {
+    const { orderId } = req.params
+    if (!orderId) {
+        throw new ApiErrors(400, 'orderId is required')
+    }
+
+    const order = await Orders.findById(orderId)
+        .populate({
+            path: "shopOrders.shop",
+            model: "Shop"
+        })
+        .populate({
+            path: "shopOrders.assignedDeliveryBoy",
+            model: "Users",
+            select: "-password"
+        })
+        .populate({
+            path: "shopOrders.shopOrderItems.item",
+            model: "Items"
+        })
+        .lean()
+    if (!order) {
+        throw new ApiErrors(404, 'order not found')
+    }
+
+    if (order.user.toString() !== req.user._id.toString()) {
+        throw new ApiErrors(401, 'unathorize access')
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, order, 'order fetched successfully')
+        )
+})
