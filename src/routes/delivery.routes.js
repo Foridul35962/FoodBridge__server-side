@@ -5,5 +5,7 @@ import protect from '../middlewares/protected.js'
 const deliveryRouter = express.Router()
 
 deliveryRouter.get('/get-current-order', protect, deliveryController.getCurrentOrder)
+deliveryRouter.post('/send-otp', protect, deliveryController.sendDeliveryOtp)
+deliveryRouter.post('/verify-otp', protect, deliveryController.verifyDelivery)
 
 export default deliveryRouter
