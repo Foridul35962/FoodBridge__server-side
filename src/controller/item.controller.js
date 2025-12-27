@@ -167,3 +167,42 @@ export const getItemById = AsyncHandler(async(req, res)=>{
             new ApiResponse(200, item, 'item fetched successfully')
         )
 })
+
+export const searchItems = AsyncHandler(async (req, res) => {
+    const { query, city } = req.query
+
+    if (!city) {
+        throw new ApiErrors(400, 'city is required')
+    }
+
+    const shops = await Shops.find({
+        city: { $regex: city, $options: 'i' }
+    })
+
+    if (shops.length === 0) {
+        throw new ApiErrors(404, 'shop not found')
+    }
+
+    const shopIds = shops.map(s => s._id)
+
+    const itemFilter = {
+        shop: { $in: shopIds }
+    }
+
+    if (query) {
+        itemFilter.$or = [
+            { name: { $regex: query, $options: 'i' } },
+            { category: { $regex: query, $options: 'i' } }
+        ]
+    }
+
+    const items = await Items.find(itemFilter)
+
+    if (items.length === 0) {
+        throw new ApiErrors(404, 'items not found')
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, items, 'search items fetched successfully')
+    )
+})
