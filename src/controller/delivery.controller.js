@@ -130,6 +130,25 @@ export const verifyDelivery = AsyncHandler(async (req, res) => {
         _id: shopOrder.assignment
     })
 
+    const io = req.app.get('io');
+    if (io) {
+        const payload = {
+            orderId,
+            shopOrderId,
+            status: 'Delivered'
+        };
+
+        io.to(order.user._id.toString()).emit(
+            'orderStatusUpdated',
+            payload
+        );
+
+        io.to(shopOrder.owner.toString()).emit(
+            'orderStatusUpdated',
+            payload
+        );
+    }
+
     return res
         .status(200)
         .json(
