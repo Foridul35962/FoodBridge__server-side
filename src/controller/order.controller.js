@@ -53,6 +53,19 @@ export const placeOrder = AsyncHandler(async (req, res) => {
         shopOrders
     })
 
+    const io = req.app.get('io')
+    if (io) {
+        newOrder.shopOrders.forEach(shopOrder => {
+            const ownerSocketId = shopOrder.owner.socketId
+            if (ownerSocketId) {
+                io.to(ownerSocketId).emit('newOrder', {
+                    orderId: newOrder._id,
+                    shopOrderId: shopOrder._id
+                })
+            }
+        })
+    }
+
     return res
         .status(200)
         .json(
@@ -231,138 +244,192 @@ export const getMyOrders = AsyncHandler(async (req, res) => {
 
 
 export const changeOrderStatus = AsyncHandler(async (req, res) => {
-    const { orderId, shopId, status } = req.body;
-
-    if (!orderId || !shopId || !status) {
-        throw new ApiErrors(400, "Order ID, Shop ID and Status are required");
-    }
-
-    // normalize shopId (frontend theke object ashle)
-    let normalizedShopId = shopId;
-    if (typeof shopId === "object" && shopId._id) {
-        normalizedShopId = shopId._id;
-    }
-
-    // Get raw order (NO populate)
-    const order = await Orders.findById(orderId);
-    if (!order) {
-        throw new ApiErrors(404, "Order not found");
-    }
-
-    // Find correct shopOrder
-    const shopOrder = order.shopOrders.find(
-        so => so.shop.toString() === normalizedShopId.toString()
-    );
-
-    if (!shopOrder) {
-        console.log("ShopOrders:", order.shopOrders);
-        console.log("Requested shopId:", normalizedShopId);
-        throw new ApiErrors(404, "Shop order not found");
-    }
-
-    // Update status
-    shopOrder.status = status;
-    await order.save();
-
-    let deliveryBoyPayload = null;
-
-    //  Handle "Out of delivery"
-    if (status === "Out of delivery" && !shopOrder.assignment) {
-        const { latitude, longitude } = order.deliveryAddress;
-
-        const nearbyDeliveryBoys = await Users.find({
-            role: "deliveryBoy",
-            location: {
-                $near: {
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [
-                            Number(longitude),
-                            Number(latitude)
-                        ]
-                    },
-                    $maxDistance: 5000
-                }
-            }
-        });
-
-        if (nearbyDeliveryBoys.length === 0) {
-            throw new ApiErrors(404, "No delivery boy nearby");
+    try {
+        const { orderId, shopId, status } = req.body;
+    
+        if (!orderId || !shopId || !status) {
+            throw new ApiErrors(400, "Order ID, Shop ID and Status are required");
         }
-
-        const nearbyIds = nearbyDeliveryBoys.map(b => b._id);
-
-        const busyIds = await DeliveryAssainments.find({
-            assignedTo: { $in: nearbyIds },
-            status: { $nin: ["completed"] }
-        }).distinct("assignedTo");
-
-        const busySet = new Set(busyIds.map(id => id.toString()));
-
-        const availableBoys = nearbyDeliveryBoys.filter(
-            b => !busySet.has(b._id.toString())
+    
+        // normalize shopId (frontend theke object ashle)
+        let normalizedShopId = shopId;
+        if (typeof shopId === "object" && shopId._id) {
+            normalizedShopId = shopId._id;
+        }
+    
+        // Get raw order (NO populate)
+        const order = await Orders.findById(orderId);
+        if (!order) {
+            throw new ApiErrors(404, "Order not found");
+        }
+    
+        // Find correct shopOrder
+        const shopOrder = order.shopOrders.find(
+            so => so.shop.toString() === normalizedShopId.toString()
         );
-
-        if (availableBoys.length === 0) {
-            throw new ApiErrors(404, "Delivery boy not available");
+    
+        if (!shopOrder) {
+            console.log("ShopOrders:", order.shopOrders);
+            console.log("Requested shopId:", normalizedShopId);
+            throw new ApiErrors(404, "Shop order not found");
         }
-
-        // Create assignment
-        const assignment = await DeliveryAssainments.create({
-            order: order._id,
-            shop: shopOrder.shop,
-            shopOrderId: shopOrder._id,
-            brodcastedTo: availableBoys.map(b => b._id),
-            status: "brodcasted"
-        });
-
-        shopOrder.assignment = assignment._id;
-        shopOrder.assignedDeliveryBoy = null;
+    
+        // Update status
+        shopOrder.status = status;
         await order.save();
-
-        deliveryBoyPayload = availableBoys.map(b => ({
-            _id: b._id,
-            fullName: b.fullName,
-            latitude: b.location.coordinates[1],
-            longitude: b.location.coordinates[0],
-            mobile: b.mobile
-        }));
-    }
-
-    // Populate final response
-    const populatedOrder = await Orders.findById(orderId)
-        .populate("user", "-password")
-        .populate("shopOrders.shop")
-        .populate("shopOrders.shopOrderItems.item")
-        .populate("shopOrders.assignedDeliveryBoy", "fullName email mobile")
-        .populate({
-            path: "shopOrders.assignment",
-            populate: {
-                path: "brodcastedTo",
-                select: "fullName email mobile"
+    
+        let deliveryBoyPayload = null;
+    
+        //  Handle "Out of delivery"
+        if (status === "Out of delivery" && !shopOrder.assignment) {
+            const { latitude, longitude } = order.deliveryAddress;
+    
+            const nearbyDeliveryBoys = await Users.find({
+                role: "deliveryBoy",
+                location: {
+                    $near: {
+                        $geometry: {
+                            type: "Point",
+                            coordinates: [
+                                Number(longitude),
+                                Number(latitude)
+                            ]
+                        },
+                        $maxDistance: 5000
+                    }
+                }
+            });
+    
+            if (nearbyDeliveryBoys.length === 0) {
+                throw new ApiErrors(404, "No delivery boy nearby");
             }
-        })
-
-    const populatedShopOrder = populatedOrder.shopOrders.find(
-        so => so._id.toString() === shopOrder._id.toString()
-    );
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            {
-                _id: populatedOrder._id,
-                user: populatedOrder.user,
-                paymentMethod: populatedOrder.paymentMethod,
-                deliveryAddress: populatedOrder.deliveryAddress,
-                totalAmount: populatedOrder.totalAmount,
-                shopOrders: populatedShopOrder,
-                createdAt: populatedOrder.createdAt,
-                deliveryCandidates: deliveryBoyPayload
-            },
-            "Order status updated successfully"
-        )
-    );
+    
+            const nearbyIds = nearbyDeliveryBoys.map(b => b._id);
+    
+            const busyIds = await DeliveryAssainments.find({
+                assignedTo: { $in: nearbyIds },
+                status: { $nin: ["completed"] }
+            }).distinct("assignedTo");
+    
+            const busySet = new Set(busyIds.map(id => id.toString()));
+    
+            const availableBoys = nearbyDeliveryBoys.filter(
+                b => !busySet.has(b._id.toString())
+            );
+    
+            if (availableBoys.length === 0) {
+                throw new ApiErrors(404, "Delivery boy not available");
+            }
+    
+            // Create assignment
+            const assignment = await DeliveryAssainments.create({
+                order: order._id,
+                shop: shopOrder.shop,
+                shopOrderId: shopOrder._id,
+                brodcastedTo: availableBoys.map(b => b._id),
+                status: "brodcasted"
+            });
+    
+            shopOrder.assignment = assignment._id;
+            shopOrder.assignedDeliveryBoy = null;
+            await order.save();
+    
+            deliveryBoyPayload = availableBoys.map(b => ({
+                _id: b._id,
+                fullName: b.fullName,
+                latitude: b.location.coordinates[1],
+                longitude: b.location.coordinates[0],
+                mobile: b.mobile
+            }));
+        }
+    
+        // Populate final response
+        const populatedOrder = await Orders.findById(orderId)
+            .populate("user", "-password")
+            .populate("shopOrders.shop")
+            .populate("shopOrders.shopOrderItems.item")
+            .populate("shopOrders.owner", "fullName email mobile socketId")
+            .populate("shopOrders.assignedDeliveryBoy", "fullName email mobile socketId")
+            .populate({
+                path: "shopOrders.assignment",
+                populate: {
+                    path: "brodcastedTo",
+                    select: "fullName email mobile socketId"
+                }
+            })
+    
+        const populatedShopOrder = populatedOrder.shopOrders.find(
+            so => so._id.toString() === shopOrder._id.toString()
+        );
+    
+        const io = req.app.get('io')
+        if (io) {
+            // notify USER
+            if (populatedOrder.user?.socketId) {
+                io.to(populatedOrder.user.socketId).emit('orderStatusUpdated', {
+                    orderId: populatedOrder._id,
+                    shopOrderId: populatedShopOrder._id,
+                    status
+                });
+            }
+    
+            // notify OWNER
+            if (populatedShopOrder.owner?.socketId) {
+                io.to(populatedShopOrder.owner.socketId).emit('orderStatusUpdated', {
+                    orderId: populatedOrder._id,
+                    shopOrderId: populatedShopOrder._id,
+                    status
+                });
+            }
+    
+            // notify ASSIGNED DELIVERY BOY
+            if (populatedShopOrder.assignedDeliveryBoy?.socketId) {
+                io.to(populatedShopOrder.assignedDeliveryBoy.socketId).emit('orderStatusUpdated', {
+                    orderId: populatedOrder._id,
+                    shopOrderId: populatedShopOrder._id,
+                    status
+                });
+            }
+    
+            // notify DELIVERY BOYS (only when broadcasted)
+            if (
+                status === "Out of delivery" &&
+                populatedShopOrder.assignment &&
+                populatedShopOrder.assignment.brodcastedTo?.length
+            ) {
+                populatedShopOrder.assignment.brodcastedTo.forEach((boy) => {
+                    if (boy.socketId) {
+                        io.to(boy.socketId).emit('newDeliveryRequest', {
+                            orderId: populatedOrder._id,
+                            shopOrderId: populatedShopOrder._id,
+                            shop: populatedShopOrder.shop,
+                            deliveryAddress: populatedOrder.deliveryAddress
+                        });
+                    }
+                });
+            }
+        }
+    
+    
+        return res.status(200).json(
+            new ApiResponse(
+                200,
+                {
+                    _id: populatedOrder._id,
+                    user: populatedOrder.user,
+                    paymentMethod: populatedOrder.paymentMethod,
+                    deliveryAddress: populatedOrder.deliveryAddress,
+                    totalAmount: populatedOrder.totalAmount,
+                    shopOrders: populatedShopOrder,
+                    createdAt: populatedOrder.createdAt,
+                    deliveryCandidates: deliveryBoyPayload
+                },
+                "Order status updated successfully"
+            )
+        );
+    } catch (error) {
+        console.log(error)
+    }
 });
 
 
@@ -385,14 +452,18 @@ export const getDeliveryAssignment = AsyncHandler(async (req, res) => {
         throw new ApiErrors(404, 'no order found')
     }
 
-    const formeted = assignments.map(a => ({
-        assignmentId: a._id,
-        orderId: a.order._id,
-        shopName: a.shop.name,
-        deliveryAddress: a.order.deliveryAddress,
-        items: a.order.shopOrders.find(so => so._id.toString() === a.shopOrderId.toString())?.shopOrderItems || [],
-        subTotal: a.order.shopOrders.find(so => so._id.toString() === a.shopOrderId.toString())?.subTotal
-    }))
+    const formeted = assignments.map(a => {
+        const shopOrder = a.order.shopOrders.find(so => so._id.toString() === a.shopOrderId?.toString() || so.shop.toString() === a.shop._id.toString());
+        return {
+            assignmentId: a._id,
+            orderId: a.order._id,
+            shopName: a.shop.name,
+            deliveryAddress: a.order.deliveryAddress,
+            items: shopOrder?.shopOrderItems || [],
+            subTotal: shopOrder?.subTotal || 0
+        }
+    });
+
 
     return res
         .status(200)
@@ -425,7 +496,7 @@ export const acceptOrder = AsyncHandler(async (req, res) => {
     assignment.acceptedAt = Date.now()
     await assignment.save()
 
-    const order = await Orders.findById(assignment.order)
+    const order = await Orders.findById(assignment.order).populate('user shopOrders.shop');
     if (!order) {
         throw new ApiErrors(400, 'order not found')
     }
@@ -433,6 +504,36 @@ export const acceptOrder = AsyncHandler(async (req, res) => {
     const shopOrder = order.shopOrders.find(so => so._id.toString() === assignment.shopOrderId.toString())
     shopOrder.assignedDeliveryBoy = req.user._id
     await order.save()
+
+    const io = req.app.get('io');
+    if (io) {
+        // Notify user
+        io.to(order.user._id.toString()).emit('orderStatusUpdated', {
+            orderId: order._id,
+            shopOrderId: shopOrder._id,
+            status: 'Out of delivery',
+            assignedDeliveryBoy: {
+                _id: req.user._id,
+                fullName: req.user.fullName,
+                mobile: req.user.mobile,
+            }
+        });
+
+        // Notify owner
+        if (shopOrder.shop.owner) {
+            io.to(shopOrder.shop.owner.toString()).emit('orderStatusUpdated', {
+                orderId: order._id,
+                shopOrderId: shopOrder._id,
+                status: 'Out of delivery',
+                assignedDeliveryBoy: {
+                    _id: req.user._id,
+                    fullName: req.user.fullName,
+                    mobile: req.user.mobile,
+                }
+            });
+        }
+    }
+
 
     return res
         .status(200)
