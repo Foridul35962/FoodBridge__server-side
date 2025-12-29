@@ -125,6 +125,7 @@ export const verifyDelivery = AsyncHandler(async (req, res) => {
     }
 
     shopOrder.status = 'Delivered'
+    shopOrder.deliveryAt = Date.now()
     await order.save()
     await DeliveryAssainments.deleteOne({
         _id: shopOrder.assignment
@@ -154,4 +155,69 @@ export const verifyDelivery = AsyncHandler(async (req, res) => {
         .json(
             new ApiResponse(200, {}, 'otp verified successfully')
         )
+})
+
+export const getTodayDeliveries = AsyncHandler(async (req, res) => {
+    const deliveryBoyId = req.user._id
+
+    const startOfDay = new Date()
+    startOfDay.setHours(0, 0, 0, 0)
+
+    // Correct query using $elemMatch
+    const orders = await Orders.find({
+        shopOrders: {
+            $elemMatch: {
+                assignedDeliveryBoy: deliveryBoyId,
+                status: "Delivered",
+                deliveryAt: { $gte: startOfDay }
+            }
+        }
+    }).lean()
+
+    if (orders.length === 0) {
+        throw new ApiErrors(404, 'No orders found for this user')
+    }
+
+    // Extract only today's delivered shopOrders
+    const todaysDeliveries = []
+
+    orders.forEach(order => {
+        order.shopOrders.forEach(shopOrder => {
+            if (
+                shopOrder.assignedDeliveryBoy?.toString() === deliveryBoyId.toString() &&
+                shopOrder.status === "Delivered" &&
+                shopOrder.deliveryAt &&
+                new Date(shopOrder.deliveryAt) >= startOfDay
+            ) {
+                todaysDeliveries.push(shopOrder)
+            }
+        })
+    })
+
+    if (todaysDeliveries.length === 0) {
+        throw new ApiErrors(404, 'No deliveries found today')
+    }
+
+    // Hour-wise delivery count
+    const state = {}
+
+    todaysDeliveries.forEach(shopOrder => {
+        const hour = new Date(shopOrder.deliveryAt).getHours()
+        state[hour] = (state[hour] || 0) + 1
+    })
+
+    const formattedStates = Object.keys(state)
+        .map(hour => ({
+            hour: Number(hour),
+            count: state[hour]
+        }))
+        .sort((a, b) => a.hour - b.hour)
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            formattedStates,
+            'Today deliveries fetched successfully'
+        )
+    )
 })
