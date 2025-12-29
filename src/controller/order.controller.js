@@ -74,172 +74,168 @@ export const placeOrder = AsyncHandler(async (req, res) => {
 })
 
 export const getMyOrders = AsyncHandler(async (req, res) => {
-    try {
-        const userId = req.user._id;
-        const user = req.user
+    const userId = req.user._id;
+    const user = req.user
 
-        let orders
-        if (user.role === 'user') {
-            orders = await Orders.find({ user: userId })
-                .sort({ createdAt: -1 })
-                .populate({
-                    path: "shopOrders",
-                    populate: [
-                        { path: "shop", select: "name" },
-                        { path: "owner", select: "name email mobile" },
-                        {
-                            path: "shopOrderItems.item",
-                            select: "name image price"
-                        }
-                    ]
-                })
-                .lean()
-                .exec()
-        } else if (user.role === 'owner') {
-            orders = await Orders.aggregate([
-                // Only orders where this owner exists
-                { $match: { "shopOrders.owner": userId } },
-
-                // Break shopOrders array
-                { $unwind: "$shopOrders" },
-
-                // Again match owner (important after unwind)
-                { $match: { "shopOrders.owner": userId } },
-
-                {
-                    $lookup: {
-                        from: "items",
-                        localField: "shopOrders.shopOrderItems.item",
-                        foreignField: "_id",
-                        as: "all_item_details"
+    let orders
+    if (user.role === 'user') {
+        orders = await Orders.find({ user: userId })
+            .sort({ createdAt: -1 })
+            .populate({
+                path: "shopOrders",
+                populate: [
+                    { path: "shop", select: "name" },
+                    { path: "owner", select: "name email mobile" },
+                    {
+                        path: "shopOrderItems.item",
+                        select: "name image price"
                     }
-                },
-                {
-                    $addFields: {
-                        "shopOrders.shopOrderItems": {
-                            $map: {
-                                input: "$shopOrders.shopOrderItems",
-                                as: "subItem",
-                                in: {
-                                    $mergeObjects: [
-                                        "$$subItem",
-                                        {
-                                            item: {
-                                                $arrayElemAt: [
-                                                    {
-                                                        $filter: {
-                                                            input: "$all_item_details",
-                                                            as: "detail",
-                                                            cond: {
-                                                                $eq: ["$$detail._id", "$$subItem.item"]
-                                                            }
+                ]
+            })
+            .lean()
+            .exec()
+    } else if (user.role === 'owner') {
+        orders = await Orders.aggregate([
+            // Only orders where this owner exists
+            { $match: { "shopOrders.owner": userId } },
+
+            // Break shopOrders array
+            { $unwind: "$shopOrders" },
+
+            // Again match owner (important after unwind)
+            { $match: { "shopOrders.owner": userId } },
+
+            {
+                $lookup: {
+                    from: "items",
+                    localField: "shopOrders.shopOrderItems.item",
+                    foreignField: "_id",
+                    as: "all_item_details"
+                }
+            },
+            {
+                $addFields: {
+                    "shopOrders.shopOrderItems": {
+                        $map: {
+                            input: "$shopOrders.shopOrderItems",
+                            as: "subItem",
+                            in: {
+                                $mergeObjects: [
+                                    "$$subItem",
+                                    {
+                                        item: {
+                                            $arrayElemAt: [
+                                                {
+                                                    $filter: {
+                                                        input: "$all_item_details",
+                                                        as: "detail",
+                                                        cond: {
+                                                            $eq: ["$$detail._id", "$$subItem.item"]
                                                         }
-                                                    },
-                                                    0
-                                                ]
-                                            }
+                                                    }
+                                                },
+                                                0
+                                            ]
                                         }
-                                    ]
-                                }
+                                    }
+                                ]
                             }
                         }
-                    }
-                },
-
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "shopOrders.assignedDeliveryBoy",
-                        foreignField: "_id",
-                        as: "assignedDeliveryBoyObj"
-                    }
-                },
-                {
-                    $addFields: {
-                        "shopOrders.assignedDeliveryBoy": {
-                            $arrayElemAt: ["$assignedDeliveryBoyObj", 0]
-                        }
-                    }
-                },
-
-                {
-                    $lookup: {
-                        from: "deliveryassainments",
-                        localField: "shopOrders.assignment",
-                        foreignField: "_id",
-                        as: "assignmentObj"
-                    }
-                },
-                {
-                    $addFields: {
-                        "shopOrders.assignment": {
-                            $arrayElemAt: ["$assignmentObj", 0]
-                        }
-                    }
-                },
-
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "shopOrders.assignment.brodcastedTo",
-                        foreignField: "_id",
-                        as: "brodcastedToUsers"
-                    }
-                },
-                {
-                    $addFields: {
-                        "shopOrders.assignment.brodcastedTo": {
-                            $map: {
-                                input: "$brodcastedToUsers",
-                                as: "user",
-                                in: {
-                                    _id: "$$user._id",
-                                    fullName: "$$user.fullName",
-                                    email: "$$user.email",
-                                    mobile: "$$user.mobile"
-                                }
-                            }
-                        }
-                    }
-                },
-
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "user",
-                        foreignField: "_id",
-                        as: "user"
-                    }
-                },
-                { $unwind: "$user" },
-                { $sort: { createdAt: -1 } },
-                {
-                    $project: {
-                        "user.password": 0,
-                        "assignedDeliveryBoyObj": 0,
-                        "assignmentObj": 0,
-                        "brodcastedToUsers": 0,
-                        "shopOrders.assignedDeliveryBoy.password": 0,
-                        "all_item_details": 0,
-                        "__v": 0
                     }
                 }
-            ]);
+            },
 
-        }
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "shopOrders.assignedDeliveryBoy",
+                    foreignField: "_id",
+                    as: "assignedDeliveryBoyObj"
+                }
+            },
+            {
+                $addFields: {
+                    "shopOrders.assignedDeliveryBoy": {
+                        $arrayElemAt: ["$assignedDeliveryBoyObj", 0]
+                    }
+                }
+            },
 
-        if (!orders || orders.length === 0) {
-            throw new ApiErrors(404, 'No orders found for this user');
-        }
+            {
+                $lookup: {
+                    from: "deliveryassainments",
+                    localField: "shopOrders.assignment",
+                    foreignField: "_id",
+                    as: "assignmentObj"
+                }
+            },
+            {
+                $addFields: {
+                    "shopOrders.assignment": {
+                        $arrayElemAt: ["$assignmentObj", 0]
+                    }
+                }
+            },
 
-        return res
-            .status(200)
-            .json(
-                new ApiResponse(200, orders, 'Orders fetched successfully')
-            );
-    } catch (error) {
-        console.log(error)
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "shopOrders.assignment.brodcastedTo",
+                    foreignField: "_id",
+                    as: "brodcastedToUsers"
+                }
+            },
+            {
+                $addFields: {
+                    "shopOrders.assignment.brodcastedTo": {
+                        $map: {
+                            input: "$brodcastedToUsers",
+                            as: "user",
+                            in: {
+                                _id: "$$user._id",
+                                fullName: "$$user.fullName",
+                                email: "$$user.email",
+                                mobile: "$$user.mobile"
+                            }
+                        }
+                    }
+                }
+            },
+
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "user",
+                    foreignField: "_id",
+                    as: "user"
+                }
+            },
+            { $unwind: "$user" },
+            { $sort: { createdAt: -1 } },
+            {
+                $project: {
+                    "user.password": 0,
+                    "assignedDeliveryBoyObj": 0,
+                    "assignmentObj": 0,
+                    "brodcastedToUsers": 0,
+                    "shopOrders.assignedDeliveryBoy.password": 0,
+                    "all_item_details": 0,
+                    "__v": 0
+                }
+            }
+        ]);
+
     }
+
+    if (!orders || orders.length === 0) {
+        throw new ApiErrors(404, 'No orders found for this user');
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, orders, 'Orders fetched successfully')
+        );
 });
 
 
