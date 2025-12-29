@@ -87,7 +87,11 @@ export const sendDeliveryOtp = AsyncHandler(async (req, res) => {
     await order.save()
 
     const mailOption = generateDeliveryAcceptMail(order.user.email, otp)
-    await transporter.sendMail(mailOption)
+    try {
+        await transporter.sendMail(mailOption)
+    } catch (error) {
+        throw new ApiErrors(500, 'otp sended failed')
+    }
 
     return res
         .status(200)
