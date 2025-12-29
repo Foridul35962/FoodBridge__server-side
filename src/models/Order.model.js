@@ -33,14 +33,17 @@ const shopOrderSchema = new mongoose.Schema({
         ref: "DeliveryAssainments",
         default: null
     },
-    assignedDeliveryBoy:{
+    assignedDeliveryBoy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Users'
     },
-    otp:{
+    otp: {
         type: String
     },
-    expiredOtp:{
+    expiredOtp: {
+        type: Date
+    },
+    deliveryAt: {
         type: Date
     }
 }, { timestamps: true })
