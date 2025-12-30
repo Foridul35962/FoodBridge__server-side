@@ -3,10 +3,10 @@ import AsyncHandler from '../utils/AsyncHandler.js'
 import ApiErrors from '../utils/ApiErrors.js'
 import Users from '../models/Users.model.js'
 import bcrypt, { truncates } from 'bcryptjs'
-import { generatePasswordResetMail, generateVerificationMail, transporter } from '../config/mail.js'
 import TempUsers from '../models/TempUsers.model.js'
 import ApiResponse from '../utils/ApiResponse.js'
 import { generateToken } from '../utils/token.js'
+import { generatePasswordResetMail, generateVerificationMail, sendBrevoMail } from '../config/mail.js'
 
 export const registration = [
     check('email')
@@ -33,7 +33,7 @@ export const registration = [
             throw new ApiErrors(400, 'entered wrong value', error.array())
         }
 
-        if (!role === 'user' && !role === 'owner' && !role === 'deliveryBoy') {
+        if (!['user', 'owner', 'deliveryBoy'].includes(role)) {
             throw new ApiErrors(400, 'entered wrong role')
         }
 
@@ -47,24 +47,21 @@ export const registration = [
 
         const hashPass = await bcrypt.hash(password, 12)
 
-        const mailOption = generateVerificationMail(email, otp)
+        const { subject, html } = generateVerificationMail(otp)
 
-        try {
-            await TempUsers.findOneAndUpdate(
-                { email },
-                { fullName, password: hashPass, mobile, role, otp, expiredOtp },
-                { new: true, upsert: true }
+        await TempUsers.findOneAndUpdate(
+            { email },
+            { fullName, password: hashPass, mobile, role, otp, expiredOtp },
+            { new: true, upsert: true }
+        )
+
+        await sendBrevoMail({ to: email, subject, html })
+
+        return res
+            .status(201)
+            .json(
+                new ApiResponse(201, {}, 'otp send successfully')
             )
-            transporter.sendMail(mailOption)
-
-            return res
-                .status(201)
-                .json(
-                    new ApiResponse(200, {}, 'otp send successfully')
-                )
-        } catch (error) {
-            throw new ApiErrors(500, 'otp send failed')
-        }
     })
 ]
 
@@ -174,7 +171,7 @@ export const forgetPassword = AsyncHandler(async (req, res) => {
     const otp = Math.floor(100000 * Math.random() + 900000).toString()
     const expiredOtp = Date.now() + 5 * 60 * 1000
 
-    const mailOption = generatePasswordResetMail(email, otp)
+    const { subject, html } = generatePasswordResetMail(otp)
 
     try {
         await TempUsers.findOneAndUpdate(
@@ -183,7 +180,7 @@ export const forgetPassword = AsyncHandler(async (req, res) => {
             { new: true, upsert: true }
         )
 
-        await transporter.sendMail(mailOption)
+        await sendBrevoMail({ to: email, subject, html })
 
         return res
             .status(200)

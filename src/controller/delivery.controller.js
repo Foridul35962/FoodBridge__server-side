@@ -1,4 +1,4 @@
-import { generateDeliveryAcceptMail, transporter } from "../config/mail.js";
+import { generateDeliveryOTPMail, sendBrevoMail } from "../config/mail.js";
 import DeliveryAssainments from "../models/DeliveryAssainment.model.js";
 import Orders from "../models/Order.model.js";
 import ApiErrors from "../utils/ApiErrors.js";
@@ -86,9 +86,9 @@ export const sendDeliveryOtp = AsyncHandler(async (req, res) => {
 
     await order.save()
 
-    const mailOption = generateDeliveryAcceptMail(order.user.email, otp)
+    const {subject, html} = generateDeliveryOTPMail(otp)
     try {
-        await transporter.sendMail(mailOption)
+        await sendBrevoMail({to: order.user.email, subject, html})
     } catch (error) {
         throw new ApiErrors(500, 'otp sended failed')
     }

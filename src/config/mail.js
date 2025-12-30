@@ -1,22 +1,38 @@
-import dotEnv from 'dotenv'
-dotEnv.config()
-import nodemailer from 'nodemailer'
+import axios from "axios";
 
-export const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
+export const sendBrevoMail = async ({ to, subject, html }) => {
+  try {
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: {
+          email: process.env.SENDER_EMAIL,
+          name: "FoodBridge",
+        },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+      },
+      {
+        headers: {
+          "api-key": process.env.BREVO_API_KEY,
+          "Content-Type": "application/json",
+        },
+        timeout: 15000,
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Brevo Mail Error:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
 
 
-export const generateVerificationMail = (email, otp) => {
+export const generateVerificationMail = (otp) => {
   return {
-    from: process.env.SENDER_EMAIL,
-    to: email,
     subject: 'Verify Your Food Bridge Account ✅',
     html: `
       <div style="font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); padding: 40px;">
@@ -59,10 +75,8 @@ export const generateVerificationMail = (email, otp) => {
 
 
 
-export const generatePasswordResetMail = (email, otp) => {
+export const generatePasswordResetMail = (otp) => {
   return {
-    from: process.env.SENDER_EMAIL,
-    to: email,
     subject: 'Reset Your Password 🔐',
     html: `
       <div style="font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #ff512f, #dd2476); padding: 40px;">
@@ -105,58 +119,42 @@ export const generatePasswordResetMail = (email, otp) => {
 }
 
 
-export const generateDeliveryAcceptMail = (email, orderDetails) => {
+export const generateDeliveryOTPMail = (otp) => {
   return {
-    from: process.env.SENDER_EMAIL,
-    to: email,
-    subject: 'Delivery Accepted! 🚚 - Food Bridge',
+    subject: `Confirm Your Order Delivery 🛍️`,
     html: `
-      <div style="font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 40px;">
-        <div style="max-width: 550px; margin: auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
-          
-          <div style="background: linear-gradient(135deg, #00b09b, #96c93d); padding: 30px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Delivery Confirmed!</h1>
-            <p style="color: #e0f2f1; margin: 10px 0 0 0;">Great news! Your delivery has been accepted.</p>
-          </div>
+      <div style="font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #11998e, #38ef7d); padding: 40px;">
+        <div style="max-width: 520px; margin: auto; background: #ffffff; border-radius: 14px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
 
-          <div style="padding: 30px;">
-            <p style="font-size: 16px; color: #333;">
-              Hello 👋,<br><br>
-              We’re happy to let you know that your delivery request for <strong>Order #${orderDetails.orderId}</strong> has been accepted and is being processed.
-            </p>
+          <h1 style="text-align: center; color: #0f9d58; margin-bottom: 10px;">
+            Your Order is Here! 🚚
+          </h1>
 
-            <div style="background: #f9f9f9; border-radius: 12px; padding: 20px; margin: 25px 0; border: 1px solid #eee;">
-              <h3 style="margin-top: 0; color: #444; font-size: 16px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">Delivery Details</h3>
-              <table style="width: 100%; font-size: 14px; color: #555;">
-                <tr>
-                  <td style="padding: 5px 0;"><strong>Item:</strong></td>
-                  <td style="text-align: right;">${orderDetails.itemName}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 5px 0;"><strong>Accepted By:</strong></td>
-                  <td style="text-align: right;">${orderDetails.delivererName}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 5px 0;"><strong>Estimated Time:</strong></td>
-                  <td style="text-align: right;">${orderDetails.eta || 'Soon'}</td>
-                </tr>
-              </table>
-            </div>
+          <p style="text-align: center; color: #666; font-size: 15px;">
+            Food Bridge • Freshly Delivered
+          </p>
 
-            <p style="font-size: 14px; color: #666; line-height: 1.5;">
-              You can track the progress or contact the delivery partner directly through the Food Bridge app. Thank you for being a part of our community!
-            </p>
+          <p style="font-size: 16px; color: #333; margin-top: 25px;">
+            Hello 👋,<br><br>
+            The delivery boy is waiting at your door to deliver your order. Please provide the following <strong>OTP</strong> to him while receiving the order:
+          </p>
 
-            <div style="text-align: center; margin-top: 30px;">
-              <a href="${process.env.APP_URL}/orders" style="background: #00b09b; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 15px;">View Order Status</a>
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background: linear-gradient(135deg, #11998e, #38ef7d); color: #fff; font-size: 28px; font-weight: bold; padding: 14px 40px; border-radius: 10px; letter-spacing: 5px; box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);">
+              ${otp}
             </div>
           </div>
 
-          <div style="background: #fdfdfd; padding: 20px; text-align: center; border-top: 1px solid #eee;">
-            <p style="font-size: 12px; color: #aaa; margin: 0;">
-              © ${new Date().getFullYear()} Food Bridge. Helping hands, happy hearts.
-            </p>
-          </div>
+          <p style="font-size: 14px; color: #d9534f; background: #fff5f5; padding: 10px; border-radius: 6px; text-align: center;">
+            ⚠️ <strong>Warning:</strong> Do not share the OTP without receiving the food packet.
+          </p>
+
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+          <p style="font-size: 12px; color: #aaa; text-align: center;">
+            Enjoy your meal! Thank you for choosing Food Bridge.<br>
+            © ${new Date().getFullYear()} Food Bridge Team.
+          </p>
         </div>
       </div>
     `
