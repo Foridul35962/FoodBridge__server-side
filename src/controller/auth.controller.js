@@ -142,8 +142,8 @@ export const logout = AsyncHandler(async (req, res) => {
     try {
         const tokenOption = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
+            secure: true,
+            sameSite: 'none'
         }
 
         return res
