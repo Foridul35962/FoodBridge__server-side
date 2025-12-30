@@ -10,6 +10,7 @@ import shopRouter from './routes/shop.routes.js'
 import itemRouter from './routes/item.routes.js'
 import orderRouter from './routes/order.routes.js'
 import deliveryRouter from './routes/delivery.routes.js'
+import arcjetProtection from './middlewares/arjetCheck.js'
 
 
 const app = express()
@@ -24,6 +25,8 @@ app.use(cookieParser())
 app.use(express.urlencoded({ extended: false }))
 app.use(express.json())
 
+//middleware for bot access
+app.use(arcjetProtection)
 
 //routes
 app.use('/api/auth', authRouter)
