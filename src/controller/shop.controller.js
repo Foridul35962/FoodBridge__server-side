@@ -138,7 +138,9 @@ export const getShopsByCity = AsyncHandler(async (req, res) => {
         throw new ApiErrors(404, 'city is missing')
     }
 
-    const shops = await Shops.find({ city })
+    const shops = await Shops.find({
+        city: { $regex: `^${city}$`, $options: 'i' }
+    })
     if (!shops) {
         throw new ApiErrors(404, 'shop is not found')
     }
